@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace pocketmine\item;
 
+use pocketmine\event\inventory\ItemDamageEvent;
 use pocketmine\item\enchantment\VanillaEnchantments;
 use pocketmine\nbt\tag\CompoundTag;
 use function lcg_value;
@@ -49,25 +50,32 @@ abstract class Durable extends Item{
 		return $this;
 	}
 
-	/**
-	 * Applies damage to the item.
-	 *
-	 * @return bool if any damage was applied to the item
-	 */
-	public function applyDamage(int $amount) : bool{
-		if($this->isUnbreakable() || $this->isBroken()){
-			return false;
-		}
+    /**
+     * Applies damage to the item.
+     *
+     * @return bool if any damage was applied to the item
+     */
+    public function applyDamage(int $amount) : bool{
+        if($this->isUnbreakable() || $this->isBroken()){
+            return false;
+        }
 
-		$amount -= $this->getUnbreakingDamageReduction($amount);
+        $ev = new ItemDamageEvent($this, $amount, $this->getUnbreakingDamageReduction($amount));
+        $ev->call();
 
-		$this->damage = min($this->damage + $amount, $this->getMaxDurability());
-		if($this->isBroken()){
-			$this->onBroken();
-		}
+        if ($ev->isCancelled()) {
+            return false;
+        }
 
-		return true;
-	}
+        $amount = $ev->getDamage() - $ev->getUnbreakingDamageReduction();
+
+        $this->damage = min($this->getDamage() + $amount, $this->getMaxDurability());
+        if($this->isBroken()){
+            $this->onBroken();
+        }
+
+        return true;
+    }
 
 	public function getDamage() : int{
 		return $this->damage;
