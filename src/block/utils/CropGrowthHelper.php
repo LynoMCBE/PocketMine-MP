@@ -29,16 +29,16 @@ use function mt_rand;
 
 final class CropGrowthHelper{
 
-	private const ON_HYDRATED_FARMLAND_BONUS = 3;
-	private const ON_DRY_FARMLAND_BONUS = 1;
-	private const ADJACENT_HYDRATED_FARMLAND_BONUS = 3 / 4;
-	private const ADJACENT_DRY_FARMLAND_BONUS = 1 / 4;
+    private const ON_HYDRATED_FARMLAND_BONUS = 5;
+    private const ON_DRY_FARMLAND_BONUS = 3;
+    private const ADJACENT_HYDRATED_FARMLAND_BONUS = 1.5;
+    private const ADJACENT_DRY_FARMLAND_BONUS = 0.5;
 
-	private const IMPROPER_ARRANGEMENT_DIVISOR = 2;
+    private const IMPROPER_ARRANGEMENT_DIVISOR = 1.5;
 
-	private function __construct(){
-		//NOOP
-	}
+    private function __construct(){
+        // NOOP
+    }
 
 	/**
 	 * Returns the speed at which this crop will grow, depending on its surroundings.
@@ -58,53 +58,52 @@ final class CropGrowthHelper{
 		$baseY = $position->getFloorY();
 		$baseZ = $position->getFloorZ();
 
-		$farmland = $world->getBlockAt($baseX, $baseY - 1, $baseZ);
+        $farmland = $world->getBlockAt($baseX, $baseY - 1, $baseZ);
 
-		if($farmland instanceof Farmland){
-			$result += $farmland->getWetness() > 0 ? self::ON_HYDRATED_FARMLAND_BONUS : self::ON_DRY_FARMLAND_BONUS;
-		}
+        if($farmland instanceof Farmland){
+            $result += $farmland->getWetness() > 0 ? self::ON_HYDRATED_FARMLAND_BONUS : self::ON_DRY_FARMLAND_BONUS;
+        }
 
-		$xRow = false;
-		$zRow = false;
-		$improperArrangement = false;
+        $xRow = false;
+        $zRow = false;
+        $improperArrangement = false;
 
-		for($x = -1; $x <= 1; $x++){
-			for($z = -1; $z <= 1; $z++){
-				if($x === 0 && $z === 0){
-					continue;
-				}
-				$nextFarmland = $world->getBlockAt($baseX + $x, $baseY - 1, $baseZ + $z);
+        for($x = -1; $x <= 1; $x++){
+            for($z = -1; $z <= 1; $z++){
+                if($x === 0 && $z === 0){
+                    continue;
+                }
+                $nextFarmland = $world->getBlockAt($baseX + $x, $baseY - 1, $baseZ + $z);
 
-				if(!$nextFarmland instanceof Farmland){
-					continue;
-				}
+                if(!$nextFarmland instanceof Farmland){
+                    continue;
+                }
 
-				$result += $nextFarmland->getWetness() > 0 ? self::ADJACENT_HYDRATED_FARMLAND_BONUS : self::ADJACENT_DRY_FARMLAND_BONUS;
+                $result += $nextFarmland->getWetness() > 0 ? self::ADJACENT_HYDRATED_FARMLAND_BONUS : self::ADJACENT_DRY_FARMLAND_BONUS;
 
-				if(!$improperArrangement){
-					$nextCrop = $world->getBlockAt($baseX + $x, $baseY, $baseZ + $z);
-					if($nextCrop->hasSameTypeId($block)){
-						match(0){
-							$x => $zRow ? $improperArrangement = true : $xRow = true,
-							$z => $xRow ? $improperArrangement = true : $zRow = true,
-							default => $improperArrangement = true,
-						};
-					}
-				}
-			}
-		}
+                if(!$improperArrangement){
+                    $nextCrop = $world->getBlockAt($baseX + $x, $baseY, $baseZ + $z);
+                    if($nextCrop->hasSameTypeId($block)){
+                        match(0){
+                            $x => $zRow ? $improperArrangement = true : $xRow = true,
+                            $z => $xRow ? $improperArrangement = true : $zRow = true,
+                            default => $improperArrangement = true,
+                        };
+                    }
+                }
+            }
+        }
 
-		//crops can be arranged in rows, but the rows must not cross and must be spaced apart by at least one block
-		if($improperArrangement){
-			$result /= self::IMPROPER_ARRANGEMENT_DIVISOR;
-		}
+        if($improperArrangement){
+            $result /= self::IMPROPER_ARRANGEMENT_DIVISOR;
+        }
 
-		return $result;
-	}
+        return $result;
+    }
 
-	public static function canGrow(Block $block) : bool{
-		//while it may be tempting to use mt_rand(0, 25) < multiplier, this would make crops grow a bit faster than
-		//vanilla in most cases due to the remainder of 25 / multiplier not being discarded
-		return mt_rand(0, (int) (25 / self::calculateMultiplier($block))) === 0;
-	}
+    public static function canGrow(Block $block) : bool{
+        //while it may be tempting to use mt_rand(0, 15) < multiplier, this would make crops grow a bit faster than
+        //vanilla in most cases due to the remainder of 15 / multiplier not being discarded
+        return mt_rand(0, (int) (15 / self::calculateMultiplier($block))) === 0;
+    }
 }
