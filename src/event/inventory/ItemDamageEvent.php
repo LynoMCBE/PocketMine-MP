@@ -41,16 +41,17 @@ class ItemDamageEvent extends Event implements Cancellable {
      * @param int $unbreakingDamageReduction
      */
     public function __construct(
-        private readonly Durable $item,
+        private Durable $item,
         private int              $damage,
         private int              $unbreakingDamageReduction = 0
     ) {}
 
     /**
-     * @return int
+     * @param Durable $item
+     * @return void
      */
-    public function getDamage(): int {
-        return $this->damage;
+    public function setItem(Durable $item): void {
+        $this->item = $item;
     }
 
     /**
@@ -63,8 +64,8 @@ class ItemDamageEvent extends Event implements Cancellable {
     /**
      * @return int
      */
-    public function getUnbreakingDamageReduction(): int {
-        return $this->unbreakingDamageReduction;
+    public function getDamage(): int {
+        return $this->damage;
     }
 
     /**
@@ -73,6 +74,13 @@ class ItemDamageEvent extends Event implements Cancellable {
      */
     public function setDamage(int $damage): void {
         $this->damage = $damage;
+    }
+
+    /**
+     * @return int
+     */
+    public function getUnbreakingDamageReduction(): int {
+        return $this->unbreakingDamageReduction;
     }
 
     /**
