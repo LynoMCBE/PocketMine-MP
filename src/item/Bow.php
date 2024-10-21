@@ -50,30 +50,17 @@ class Bow extends Tool implements Releasable{
      * @return ItemUseResult
      */
     public function onReleaseUsing(Player $player, array &$returnedItems): ItemUseResult {
-        $arrow = VanillaItems::ARROW();
-        $inventory = match (true) {
-            $player->getOffHandInventory()->contains($arrow) => $player->getOffHandInventory(),
-            $player->getInventory()->contains($arrow) => $player->getInventory(),
-            default => null
-        };
-        if ($player->hasFiniteResources() && is_null($inventory)) {
-            return ItemUseResult::FAIL();
-        }
-        $diff = $player->getItemUseDuration();
-        $p = $diff / 20;
+        $p = $player->getItemUseDuration() / 20;
         $baseForce = min((($p ** 2) + $p * 2) / 3, 1);
         $location = $player->getLocation();
+        $yaw = $location->getYaw();
         $entity = new Arrow(Location::fromObject(
-            new Vector3($location->x, $location->y + $player->getEyeHeight(), $location->z),
+            new Vector3($location->getX(), $location->getY() + $player->getEyeHeight(), $location->getZ()),
             $player->getWorld(),
-            ($location->yaw > 180 ? 360 : 0) - $location->yaw,
-            -$location->pitch
+            ($yaw > 180 ? 360 : 0) - $yaw,
+            -$location->getPitch()
         ), $player, $baseForce >= 1);
         $entity->setMotion($player->getDirectionVector());
-        $infinity = $this->hasEnchantment(VanillaEnchantments::INFINITY());
-        if ($infinity) {
-            $entity->setPickupMode(Arrow::PICKUP_CREATIVE);
-        }
         if (($punchLevel = $this->getEnchantmentLevel(VanillaEnchantments::PUNCH())) > 0) {
             $entity->setPunchKnockback($punchLevel);
         }
@@ -93,12 +80,7 @@ class Bow extends Tool implements Releasable{
             } else {
                 $entity->spawnToAll();
             }
-            if ($player->hasFiniteResources()) {
-                if (!$infinity) {
-                    $inventory?->removeItem($arrow);
-                }
-                $this->applyDamage(1);
-            }
+            $this->applyDamage(1);
         } else {
             $entity->flagForDespawn();
             return ItemUseResult::FAIL();
@@ -107,6 +89,7 @@ class Bow extends Tool implements Releasable{
     }
 
 	public function canStartUsingItem(Player $player) : bool{
-		return !$player->hasFiniteResources() || $player->getOffHandInventory()->contains($arrow = VanillaItems::ARROW()) || $player->getInventory()->contains($arrow);
+		return true;
 	}
+
 }
